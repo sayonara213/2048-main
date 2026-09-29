@@ -21,7 +21,7 @@ export function ScoreBoard({ score, bestScore, elapsedMs, moves, gained, gainKey
           <span
             key={gainKey}
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 -top-1 text-sm font-bold text-amber-300 motion-safe:animate-float-up motion-reduce:opacity-0"
+            className="pointer-events-none absolute inset-x-0 -top-1 text-sm font-bold text-amber-300 motion-safe:animate-float-up"
           >
             +{gained}
           </span>
