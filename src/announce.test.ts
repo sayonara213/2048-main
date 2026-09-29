@@ -17,10 +17,12 @@ describe('announcements', () => {
   })
 
   it('describes game over and wins', () => {
-    expect(describeOutcome(fromGrid([[2, 4], [8, 16]], { over: true, score: 30 }))).toBe(
-      'Game over. Final score 30. Best tile 16.',
+    expect(describeOutcome(fromGrid([[2, 4], [8, 16]], { over: true, score: 30 }), 61_000)).toBe(
+      'Game over. Final score 30. Best tile 16. Time 1 minute 1 second.',
     )
-    expect(describeOutcome(fromGrid([[2048, 0], [0, 0]], { won: true, score: 20000 }))).toBe('You made 2048! Score 20000.')
-    expect(describeOutcome(fromGrid([[2048, 0], [0, 0]], { won: true, keepPlaying: true }))).toBe('')
+    expect(describeOutcome(fromGrid([[2048, 0], [0, 0]], { won: true, score: 20000 }), 3_725_000)).toBe(
+      'You made 2048! Score 20000. Time 1 hour 2 minutes 5 seconds.',
+    )
+    expect(describeOutcome(fromGrid([[2048, 0], [0, 0]], { won: true, keepPlaying: true }), 0)).toBe('')
   })
 })

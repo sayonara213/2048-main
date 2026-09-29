@@ -1,14 +1,16 @@
 import { useEffect, useRef } from 'react'
 import type { GameState } from '../game'
+import { formatDuration } from '../hooks/useTimer'
 
 interface OutcomeProps {
   game: GameState
+  elapsedMs: number
   onRestart: () => void
   onKeepPlaying: () => void
 }
 
 /** Win or game-over panel. Moves focus to its main action when it appears. */
-export function Outcome({ game, onRestart, onKeepPlaying }: OutcomeProps) {
+export function Outcome({ game, elapsedMs, onRestart, onKeepPlaying }: OutcomeProps) {
   const primary = useRef<HTMLButtonElement>(null)
   const showWin = game.won && !game.keepPlaying && !game.over
   const visible = game.over || showWin
@@ -27,7 +29,9 @@ export function Outcome({ game, onRestart, onKeepPlaying }: OutcomeProps) {
       <h2 id="outcome-title" className="text-4xl font-extrabold text-white">
         {game.over ? 'Game over' : 'You made 2048!'}
       </h2>
-      <p className="text-stone-200">Score {game.score}</p>
+      <p className="text-stone-200">
+        Score {game.score} in {formatDuration(elapsedMs)}
+      </p>
       <div className="flex gap-3">
         {showWin && (
           <button ref={primary} type="button" onClick={onKeepPlaying} className="btn-primary">

@@ -16,7 +16,8 @@ npm run build      # typecheck and production build into dist/
 
 - `src/game/` holds the rules as pure functions (`newGame`, `move`, `slide`, `spawnTile`, `canMove`, `hasWon`). Randomness is injected so tests are deterministic, and tiles keep stable ids so the UI can animate them.
 - `src/hooks/` wires the rules to React: game state, keyboard (arrows and WASD) and swipe input.
-- `src/components/` is the DOM board, score and controls.
+- `src/storage.ts` saves the game, best score, move count and play time to localStorage and validates it on load.
+- `src/components/` is the DOM board, scoreboard (score with a `+N` per move, best, timer, moves) and controls.
 
 ## Accessibility
 

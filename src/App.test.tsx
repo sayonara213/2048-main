@@ -2,6 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { fromGrid } from './game'
+import { saveGame } from './storage'
 
 const cellTexts = () => within(screen.getByRole('table')).getAllByRole('cell').map((c) => c.textContent)
 
@@ -53,5 +55,21 @@ describe('App', () => {
     }
     await userEvent.click(screen.getByRole('button', { name: 'Move left' }))
     expect(screen.getByRole('status').textContent).toMatch(/Moved left|Can't move left/)
+  })
+
+  it('restores a saved game and shows the points from each move', async () => {
+    const game = fromGrid([[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 4]], { score: 100 })
+    saveGame({ game, elapsedMs: 65_000, moves: 7, bestScore: 300 })
+    render(<App />)
+
+    expect(screen.getByText('Score').nextElementSibling).toHaveTextContent('100')
+    expect(screen.getByText('Best').nextElementSibling).toHaveTextContent('300')
+    expect(screen.getByRole('timer')).toHaveTextContent('1:05')
+    expect(screen.getByText('Moves').nextElementSibling).toHaveTextContent('7')
+
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(screen.getByText('Score').nextElementSibling).toHaveTextContent('104+4')
+    expect(screen.getByText('Moves').nextElementSibling).toHaveTextContent('8')
+    expect(JSON.parse(localStorage.getItem('2048:save:v1')!).game.score).toBe(104)
   })
 })

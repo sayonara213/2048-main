@@ -3,11 +3,17 @@
 @theme {
   --animate-pop: pop 180ms ease-out;
   --animate-appear: appear 180ms ease-out;
+  --animate-float-up: float-up 700ms ease-out forwards;
 
   @keyframes pop {
     0% { transform: scale(0.8); }
     50% { transform: scale(1.12); }
     100% { transform: scale(1); }
+  }
+
+  @keyframes float-up {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-1.5rem); }
   }
 
   @keyframes appear {
