@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 2048
 
-## Getting Started
+The sliding-tile game, built with Vite, React, TypeScript and Tailwind CSS.
 
-First, run the development server:
+## Scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # start the dev server
+npm test           # unit and component tests (Vitest)
+npm run lint       # ESLint
+npm run build      # typecheck and production build into dist/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Layout
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `src/game/` holds the rules as pure functions (`newGame`, `move`, `slide`, `spawnTile`, `canMove`, `hasWon`). Randomness is injected so tests are deterministic, and tiles keep stable ids so the UI can animate them.
+- `src/hooks/` wires the rules to React: game state, keyboard (arrows and WASD) and swipe input.
+- `src/storage.ts` saves the game, best score, move count and play time to localStorage and validates it on load.
+- `src/components/` is the DOM board, scoreboard (score with a `+N` per move, best, timer, moves) and controls.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Accessibility
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- Play with arrow keys, WASD, swipe, or the on-screen direction buttons.
+- The board is exposed as a read-only table of cell values; the animated tile layer is hidden from assistive tech.
+- A polite live region announces each move, merges, score and the new tile; an alert announces a win or game over, and focus moves to the next action.
+- Animations only run when the OS has not asked for reduced motion.
+- Tile colours meet WCAG AA text contrast.

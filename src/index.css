@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+@theme {
+  --animate-pop: pop 180ms ease-out;
+  --animate-appear: appear 180ms ease-out;
+  --animate-float-up: float-up 700ms ease-out forwards;
+
+  @keyframes pop {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes float-up {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-1.5rem); }
+  }
+
+  @keyframes appear {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
+:root {
+  color-scheme: dark;
+  background: var(--color-stone-900);
+  color: var(--color-stone-100);
+}
+
+.board {
+  --gap: clamp(0.5rem, 2.5vw, 0.875rem);
+}
+
+/* The tile layer is a size container so --cell resolves to one cell's width
+   wherever it is used (size, translate and font-size alike). */
+.tile-layer {
+  container-type: size;
+  --cell: calc((100cqw - (var(--size) - 1) * var(--gap)) / var(--size));
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-lg bg-amber-400 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-300;
+  }
+  .btn-secondary {
+    @apply rounded-lg bg-stone-600 px-4 py-2 font-semibold text-white hover:bg-stone-500;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-amber-300);
+  outline-offset: 2px;
+}
