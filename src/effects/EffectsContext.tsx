@@ -1,14 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { MotionConfig, useReducedMotion } from 'framer-motion';
 
-type EffectsLevel = 'full' | 'reduced';
-
-interface EffectsState {
-  /** True when the OS asks for reduced motion or the player turned effects down. */
-  reduced: boolean;
-  level: EffectsLevel;
-  setLevel: (l: EffectsLevel) => void;
-}
+import { EffectsCtx, type EffectsLevel } from './useEffects';
 
 const STORAGE_KEY = 'fx-level';
 
@@ -20,8 +13,6 @@ function readStored(): EffectsLevel | null {
     return null;
   }
 }
-
-const Ctx = createContext<EffectsState>({ reduced: false, level: 'full', setLevel: () => {} });
 
 export function EffectsProvider({ children }: { children: ReactNode }) {
   const systemReduced = useReducedMotion() ?? false;
@@ -40,12 +31,8 @@ export function EffectsProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({ reduced: level === 'reduced', level, setLevel }), [level, setLevel]);
 
   return (
-    <Ctx.Provider value={value}>
+    <EffectsCtx.Provider value={value}>
       <MotionConfig reducedMotion={value.reduced ? 'always' : 'never'}>{children}</MotionConfig>
-    </Ctx.Provider>
+    </EffectsCtx.Provider>
   );
-}
-
-export function useEffects() {
-  return useContext(Ctx);
 }

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
-import { useEffects } from './EffectsContext';
+import { useEffects } from './useEffects';
 
 const srOnly = {
   position: 'absolute',

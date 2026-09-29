@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { fxBus, type FxEvent } from './fxBus';
 import { tileStyle } from './tileColors';
-import { useEffects } from './EffectsContext';
+import { useEffects } from './useEffects';
 
 interface Particle {
   sprite: Sprite;
@@ -37,51 +37,66 @@ const ORB_COLORS = [0x7c4dff, 0xff4fd8, 0x00d4ff, 0xffb300, 0x00e676, 0xff6e40];
 const CONFETTI = [0xffd400, 0xff4fd8, 0x4fc3f7, 0x00e676, 0xff6e40, 0xffffff];
 
 /**
- * Full-screen decorative PixiJS canvas: drifting glow orbs, a twinkling
- * starfield, and particle bursts driven by `fxBus`. It is aria-hidden,
+ * Two full-screen decorative PixiJS canvases: one behind the UI with drifting
+ * glow orbs and a twinkling starfield, one in front of it for particle bursts
+ * driven by `fxBus`. Both are aria-hidden,
  * ignores pointer input, freezes to a still frame under reduced motion and
  * pauses while the tab is hidden.
  */
 export function PixiStage() {
-  const host = useRef<HTMLDivElement>(null);
+  const backHost = useRef<HTMLDivElement>(null);
+  const frontHost = useRef<HTMLDivElement>(null);
   const { reduced } = useEffects();
   const reducedRef = useRef(reduced);
-  const appRef = useRef<Application | null>(null);
+  const appsRef = useRef<Application[]>([]);
   const clearParticlesRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let destroyed = false;
     let ready = false;
     const app = new Application();
+    const front = new Application();
+    const apps = [app, front];
     const cleanups: (() => void)[] = [];
 
     (async () => {
-      await app.init({
-        resizeTo: window,
-        backgroundAlpha: 0,
-        antialias: true,
-        autoDensity: true,
-        resolution: Math.min(window.devicePixelRatio || 1, 2),
-        preference: 'webgl',
-      });
+      try {
+        await Promise.all(
+          apps.map((a) =>
+            a.init({
+              resizeTo: window,
+              backgroundAlpha: 0,
+              antialias: true,
+              autoDensity: true,
+              resolution: Math.min(window.devicePixelRatio || 1, 2),
+              preference: 'webgl',
+            }),
+          ),
+        );
+      } catch {
+        // No WebGL/canvas (old browser, test env): the effects are decorative, so skip them.
+        return;
+      }
       if (destroyed) {
-        app.destroy(true, { children: true, texture: true });
+        apps.forEach((a) => a.destroy(true, { children: true, texture: true }));
         return;
       }
       ready = true;
-      appRef.current = app;
-      host.current?.appendChild(app.canvas);
+      appsRef.current = apps;
+      backHost.current?.appendChild(app.canvas);
+      frontHost.current?.appendChild(front.canvas);
 
       const bg = new Container();
       const stars = new Container();
       const fx = new Container();
       fx.blendMode = 'add';
-      app.stage.addChild(bg, stars, fx);
+      app.stage.addChild(bg, stars);
+      front.stage.addChild(fx);
 
-      // Shared textures.
-      const dot = app.renderer.generateTexture(new Graphics().circle(0, 0, 8).fill(0xffffff));
-      const ring = app.renderer.generateTexture(new Graphics().circle(0, 0, 32).stroke({ width: 3, color: 0xffffff }));
-      const rect = app.renderer.generateTexture(new Graphics().rect(0, 0, 8, 4).fill(0xffffff));
+      // Particle textures belong to the front renderer.
+      const dot = front.renderer.generateTexture(new Graphics().circle(0, 0, 8).fill(0xffffff));
+      const ring = front.renderer.generateTexture(new Graphics().circle(0, 0, 32).stroke({ width: 3, color: 0xffffff }));
+      const rect = front.renderer.generateTexture(new Graphics().rect(0, 0, 8, 4).fill(0xffffff));
 
       // Soft radial glow drawn once on a 2D canvas: far cheaper than a blur filter.
       const glowCanvas = document.createElement('canvas');
@@ -212,7 +227,7 @@ export function PixiStage() {
             break;
           case 'win':
             for (let i = 0; i < 220; i++) {
-              spawn(rect, e.x, e.y, CONFETTI[i % CONFETTI.length], {
+              spawn(rect, e.x, e.y, CONFETTI[i % CONFETTI.length]!, {
                 angle: -Math.PI / 2 + (Math.random() - 0.5) * 2.2,
                 speed: 6 + Math.random() * 10,
                 scale: 0.9 + Math.random() * 0.9,
@@ -248,7 +263,7 @@ export function PixiStage() {
         for (const s of starList) s.g.alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(elapsed * s.speed + s.phase));
 
         for (let i = particles.length - 1; i >= 0; i--) {
-          const p = particles[i];
+          const p = particles[i]!;
           p.life += dt;
           if (p.life >= p.maxLife) {
             p.sprite.destroy();
@@ -266,20 +281,19 @@ export function PixiStage() {
       });
 
       const onVisibility = () => {
-        if (document.hidden) app.ticker.stop();
-        else if (!reducedRef.current) app.ticker.start();
+        apps.forEach((a) => applyReduced(a, reducedRef.current));
       };
       document.addEventListener('visibilitychange', onVisibility);
       cleanups.push(() => document.removeEventListener('visibilitychange', onVisibility));
 
-      applyReduced(app, reducedRef.current);
+      apps.forEach((a) => applyReduced(a, reducedRef.current));
     })();
 
     return () => {
       destroyed = true;
       cleanups.forEach((c) => c());
-      if (ready) app.destroy(true, { children: true, texture: true });
-      appRef.current = null;
+      if (ready) apps.forEach((a) => a.destroy(true, { children: true, texture: true }));
+      appsRef.current = [];
     };
   }, []);
 
@@ -287,23 +301,23 @@ export function PixiStage() {
   useEffect(() => {
     reducedRef.current = reduced;
     if (reduced) clearParticlesRef.current();
-    if (appRef.current) applyReduced(appRef.current, reduced);
+    appsRef.current.forEach((a) => applyReduced(a, reduced));
   }, [reduced]);
 
   return (
-    <div
-      ref={host}
-      aria-hidden="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}
-    />
+    <>
+      <div ref={backHost} aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
+      <div ref={frontHost} aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 20, pointerEvents: 'none' }} />
+    </>
   );
 }
 
+/** Runs the ticker only while motion is allowed and the tab is visible. */
 function applyReduced(app: Application, reduced: boolean) {
-  if (reduced) {
+  if (reduced || document.hidden) {
     app.ticker.stop();
     app.render(); // keep one still frame of the background
-  } else if (!document.hidden) {
+  } else {
     app.ticker.start();
   }
 }

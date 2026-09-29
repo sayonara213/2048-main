@@ -1,4 +1,4 @@
-import { useEffects } from './EffectsContext';
+import { useEffects } from './useEffects';
 
 /** Lets players turn motion down regardless of their OS setting. */
 export function EffectsToggle({ className }: { className?: string }) {

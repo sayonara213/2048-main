@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react'
 import { describeMove, describeOutcome } from './announce'
 import { Board } from './components/Board'
 import { DirectionPad } from './components/DirectionPad'
@@ -8,8 +8,23 @@ import { useGame } from './hooks/useGame'
 import { useKeyboardControls } from './hooks/useKeyboardControls'
 import { useTimer } from './hooks/useTimer'
 import { loadGame, saveGame } from './storage'
+import { EffectsProvider, EffectsToggle, centerOf, fxBus, type ScoreGain } from './effects'
+
+// PixiJS is large and purely decorative, so it loads after the game is playable.
+const PixiStage = lazy(() => import('./effects/PixiStage').then((m) => ({ default: m.PixiStage })))
 
 export default function App() {
+  return (
+    <EffectsProvider>
+      <Suspense fallback={null}>
+        <PixiStage />
+      </Suspense>
+      <Game />
+    </EffectsProvider>
+  )
+}
+
+function Game() {
   const [saved] = useState(loadGame)
   const { game, bestScore, last, seq, moves, move, restart, keepPlaying } = useGame(saved)
   const blocked = game.over || (game.won && !game.keepPlaying)
@@ -32,14 +47,20 @@ export default function App() {
   const status = last ? describeMove(last.direction, last.result) + pad : ''
   const outcome = describeOutcome(game, timer.elapsed)
   const gained = last?.result.moved ? last.result.scoreGained : 0
+  const gains = useScoreGains(gained, seq)
+  const boardArea = useRef<HTMLDivElement>(null)
+  useOutcomeEffects(game.won, game.over, boardArea)
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 py-8">
+    <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 py-8">
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-5xl font-extrabold tracking-tight text-stone-100">2048</h1>
-        <button type="button" onClick={newGame} className="btn-primary shrink-0">
-          New game
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <EffectsToggle className="btn-secondary text-sm" />
+          <button type="button" onClick={newGame} className="btn-primary">
+            New game
+          </button>
+        </div>
       </header>
 
       <ScoreBoard
@@ -47,8 +68,7 @@ export default function App() {
         bestScore={bestScore}
         elapsedMs={timer.elapsed}
         moves={moves}
-        gained={gained}
-        gainKey={seq}
+        gains={gains}
       />
 
       <p id="how-to-play" className="text-sm text-stone-300">
@@ -56,7 +76,7 @@ export default function App() {
         this browser.
       </p>
 
-      <div className="relative">
+      <div ref={boardArea} className="relative">
         <Board game={game} onMove={move} />
         <Outcome game={game} elapsedMs={timer.elapsed} onRestart={newGame} onKeepPlaying={keepPlaying} />
       </div>
@@ -73,4 +93,27 @@ export default function App() {
       </div>
     </main>
   )
+}
+
+/**
+ * The last few per-move score gains, for the floating "+N" labels. Old ones
+ * have already faded out, so the list only needs a cap, not timers.
+ */
+function useScoreGains(amount: number, seq: number) {
+  const [state, setState] = useState<{ seq: number; gains: ScoreGain[] }>({ seq, gains: [] })
+  if (state.seq !== seq) {
+    const gains = amount > 0 ? [...state.gains.slice(-3), { id: seq, amount }] : state.gains
+    setState({ seq, gains })
+  }
+  return state.gains
+}
+
+/** Confetti on a win, dimmed background on game over, reset on a new game. */
+function useOutcomeEffects(won: boolean, over: boolean, area: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    if (won && area.current) fxBus.emit({ type: 'win', ...centerOf(area.current) })
+  }, [won, area])
+  useEffect(() => {
+    fxBus.emit({ type: over ? 'gameOver' : 'reset' })
+  }, [over])
 }

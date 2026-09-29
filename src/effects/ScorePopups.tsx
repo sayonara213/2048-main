@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffects } from './EffectsContext';
+import { useEffects } from './useEffects';
 
 export interface ScoreGain {
   /** Unique per move, e.g. the move counter. */
@@ -25,12 +25,12 @@ export function ScorePopups({ gains }: { gains: ScoreGain[] }) {
               <motion.span
                 key={g.id}
                 initial={{ opacity: 0, y: 0, scale: reduced ? 1 : 0.6 }}
-                animate={{ opacity: [0, 1, 1, 0], y: reduced ? 0 : -36, scale: reduced ? 1 : big ? 1.35 : 1 }}
+                animate={{ opacity: [0, 1, 1, 0], y: reduced ? 0 : -44, scale: reduced ? 1 : big ? 1.35 : 1 }}
                 transition={{ duration: reduced ? 1.2 : 0.9, ease: 'easeOut', times: [0, 0.15, 0.7, 1] }}
                 style={{
                   position: 'absolute',
                   left: '50%',
-                  bottom: '100%',
+                  top: '100%',
                   translateX: '-50%',
                   fontWeight: 800,
                   fontSize: big ? '1.4rem' : '1.1rem',

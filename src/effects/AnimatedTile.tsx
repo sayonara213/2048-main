@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { tileStyle } from './tileColors';
 import { centerOf, fxBus } from './fxBus';
-import { useEffects } from './EffectsContext';
+import { useEffects } from './useEffects';
 
 export interface AnimatedTileProps {
   value: number;
@@ -10,24 +10,30 @@ export interface AnimatedTileProps {
   col: number;
   /** Cell edge length in px. */
   cell: number;
-  /** Gap between cells (and board padding) in px. */
+  /** Gap between cells in px. */
   gap: number;
   isNew?: boolean;
   merged?: boolean;
+  /**
+   * A tile that was just absorbed by a merge. Render it with its old id at the
+   * merge destination so it visibly slides in underneath the merged tile.
+   */
+  ghost?: boolean;
 }
 
 const SLIDE = { type: 'spring', stiffness: 700, damping: 45, mass: 0.6 } as const;
 
 /**
- * A single tile. Render it inside a `position: relative` board and key it by
- * the tile's stable id so Framer Motion can slide it between cells.
+ * A single tile. Render it inside a `position: relative` layer whose origin is
+ * the top-left cell, keyed by the tile's stable id so Framer Motion can slide
+ * it between cells.
  */
-export function AnimatedTile({ value, row, col, cell, gap, isNew, merged }: AnimatedTileProps) {
+export function AnimatedTile({ value, row, col, cell, gap, isNew, merged, ghost }: AnimatedTileProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { reduced } = useEffects();
   const style = tileStyle(value);
-  const x = gap + col * (cell + gap);
-  const y = gap + row * (cell + gap);
+  const x = col * (cell + gap);
+  const y = row * (cell + gap);
   const digits = String(value).length;
   const fontSize = cell * (digits <= 2 ? 0.45 : digits === 3 ? 0.38 : digits === 4 ? 0.3 : 0.24);
 
@@ -36,11 +42,11 @@ export function AnimatedTile({ value, row, col, cell, gap, isNew, merged }: Anim
   useEffect(() => {
     const grew = value > prevValue.current;
     prevValue.current = value;
-    if (!(grew || merged) || reduced || !ref.current) return;
+    if (!(grew || merged) || ghost || reduced || !ref.current) return;
     const el = ref.current;
     const t = window.setTimeout(() => fxBus.emit({ type: 'merge', ...centerOf(el), value }), 90);
     return () => window.clearTimeout(t);
-  }, [value, merged, reduced]);
+  }, [value, merged, ghost, reduced]);
 
   useEffect(() => {
     if (!isNew || reduced || !ref.current) return;
@@ -56,11 +62,11 @@ export function AnimatedTile({ value, row, col, cell, gap, isNew, merged }: Anim
   return (
     <motion.div
       ref={ref}
-      initial={isNew ? { x, y, scale: 0, opacity: 0 } : false}
+      initial={isNew ? { x, y, scale: 0, opacity: 0 } : merged ? { x, y, opacity: 0 } : false}
       animate={{ x, y, scale: 1, opacity: 1 }}
-      exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.1 } }}
+      exit={{ opacity: 0, transition: { duration: ghost ? 0 : 0.1 } }}
       transition={reduced ? { duration: 0 } : { ...SLIDE, scale: { type: 'spring', stiffness: 500, damping: 18, delay: 0.08 }, opacity: { duration: 0.12, delay: 0.08 } }}
-      style={{ position: 'absolute', left: 0, top: 0, width: cell, height: cell, zIndex: merged ? 2 : 1 }}
+      style={{ position: 'absolute', left: 0, top: 0, width: cell, height: cell, zIndex: ghost ? 0 : merged ? 2 : 1 }}
     >
       <motion.div
         key={value}
