@@ -52,37 +52,38 @@ function Game() {
   useOutcomeEffects(game.won, game.over, boardArea)
 
   return (
-    <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 py-8">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="text-5xl font-extrabold tracking-tight text-stone-100">2048</h1>
-        <div className="flex shrink-0 gap-2">
-          <EffectsToggle className="btn-secondary text-sm" />
-          <button type="button" onClick={newGame} className="btn-primary">
-            New game
-          </button>
+    <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[512px] flex-col justify-center px-4 py-8">
+      <div className="lg-console">
+        <header className="lg-head">
+          <h1 className="lg-title">2048</h1>
+          <div className="lg-actions">
+            <EffectsToggle className="lg-btn" />
+            <button type="button" onClick={newGame} className="lg-btn lg-btn-primary">
+              New game
+            </button>
+          </div>
+        </header>
+
+        <ScoreBoard
+          score={game.score}
+          bestScore={bestScore}
+          elapsedMs={timer.elapsed}
+          moves={moves}
+          gains={gains}
+        />
+
+        <div ref={boardArea} className="relative">
+          <Board game={game} onMove={move} />
+          <Outcome game={game} elapsedMs={timer.elapsed} onRestart={newGame} onKeepPlaying={keepPlaying} />
         </div>
-      </header>
 
-      <ScoreBoard
-        score={game.score}
-        bestScore={bestScore}
-        elapsedMs={timer.elapsed}
-        moves={moves}
-        gains={gains}
-      />
-
-      <p id="how-to-play" className="text-sm text-stone-300">
-        Use arrow keys, WASD, swipe, or the buttons below to join tiles and reach 2048. Your game is saved in
-        this browser.
-      </p>
-
-      <div ref={boardArea} className="relative">
-        <Board game={game} onMove={move} />
-        <Outcome game={game} elapsedMs={timer.elapsed} onRestart={newGame} onKeepPlaying={keepPlaying} />
-      </div>
-
-      <div className="flex justify-center">
-        <DirectionPad onMove={move} disabled={blocked} />
+        <div className="lg-foot">
+          <p id="how-to-play" className="lg-hint">
+            Slide to join tiles. Reach 2048. Arrow keys, WASD, swipe or the arrows here. Your game is saved in this
+            browser.
+          </p>
+          <DirectionPad onMove={move} disabled={blocked} />
+        </div>
       </div>
 
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">

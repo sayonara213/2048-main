@@ -24,21 +24,21 @@ export function Outcome({ game, elapsedMs, onRestart, onKeepPlaying }: OutcomePr
   return (
     <section
       aria-labelledby="outcome-title"
-      className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-2xl bg-stone-900/85 p-6 text-center motion-safe:animate-appear"
+      className="lg-outcome absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 p-6 text-center"
     >
-      <h2 id="outcome-title" className="text-4xl font-extrabold text-white">
+      <h2 id="outcome-title" className="lg-outcome-title">
         {game.over ? 'Game over' : 'You made 2048!'}
       </h2>
-      <p className="text-stone-200">
-        Score {game.score} in {formatDuration(elapsedMs)}
+      <p className="lg-outcome-body">
+        Score {game.score.toLocaleString()} in {formatDuration(elapsedMs)}
       </p>
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         {showWin && (
-          <button ref={primary} type="button" onClick={onKeepPlaying} className="btn-primary">
+          <button ref={primary} type="button" onClick={onKeepPlaying} className="lg-btn lg-btn-primary">
             Keep playing
           </button>
         )}
-        <button ref={showWin ? undefined : primary} type="button" onClick={onRestart} className={showWin ? 'btn-secondary' : 'btn-primary'}>
+        <button ref={showWin ? undefined : primary} type="button" onClick={onRestart} className={showWin ? 'lg-btn' : 'lg-btn lg-btn-primary'}>
           {game.over ? 'Try again' : 'New game'}
         </button>
       </div>

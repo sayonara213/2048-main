@@ -32,10 +32,10 @@ export function ScorePopups({ gains }: { gains: ScoreGain[] }) {
                   left: '50%',
                   top: 0,
                   translateX: '-50%',
-                  fontWeight: 800,
-                  fontSize: big ? '1.4rem' : '1.1rem',
-                  color: big ? '#ffd400' : '#fff',
-                  textShadow: '0 2px 8px rgba(0,0,0,.45)',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: big ? '1.25rem' : '1rem',
+                  color: big ? 'var(--accent)' : 'var(--ink)',
                   whiteSpace: 'nowrap',
                 }}
               >

@@ -16,29 +16,57 @@ interface Particle {
   grow: number;
 }
 
-interface Orb {
+interface Glow {
   g: Sprite;
-  baseX: number;
-  baseY: number;
+  /** Anchor as a fraction of the screen. */
+  fx: number;
+  fy: number;
+  /** Drift radius as a fraction of the screen. */
   ampX: number;
   ampY: number;
-  speed: number;
-  phase: number;
-}
-
-interface Star {
-  g: Graphics;
+  /** Radians per ms: every glow takes at least a minute per loop. */
   speed: number;
   phase: number;
 }
 
 const MAX_PARTICLES = 700;
-const ORB_COLORS = [0x7c4dff, 0xff4fd8, 0x00d4ff, 0xffb300, 0x00e676, 0xff6e40];
-const CONFETTI = [0xffd400, 0xff4fd8, 0x4fc3f7, 0x00e676, 0xff6e40, 0xffffff];
+const TAU = Math.PI * 2;
+
+// The three Lagoon aurora glows: CSS variable, position and size (fractions of the screen).
+const GLOWS = [
+  { name: '--glow-teal', fx: 0.15, fy: 0.1, rx: 0.6, ry: 0.5, loopMs: 70_000 },
+  { name: '--glow-sea', fx: 0.95, fy: 0.45, rx: 0.5, ry: 0.6, loopMs: 90_000 },
+  { name: '--glow-kelp', fx: 0.35, fy: 1.05, rx: 0.6, ry: 0.45, loopMs: 110_000 },
+];
+
+// Confetti in the water scale: sea-glass, lagoon, channel, surfacing, pearl.
+const CONFETTI = [0x8edbc6, 0x35ad9f, 0x4a9fd6, 0x8cc4ef, 0xe9fbd9, 0x7fe0c4];
 
 /**
- * Two full-screen decorative PixiJS canvases: one behind the UI with drifting
- * glow orbs and a twinkling starfield, one in front of it for particle bursts
+ * Reads a CSS color variable as a Pixi tint and alpha. Handles hex (the build
+ * minifies rgba() to #rrggbbaa) and rgb()/rgba().
+ */
+function cssColor(name: string, fallback = 0xffffff): { color: number; alpha: number } {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const hex = /^#([0-9a-f]{3,8})$/i.exec(raw)?.[1];
+  if (hex && hex.length !== 5 && hex.length !== 7) {
+    const full = hex.length <= 4 ? [...hex].map((c) => c + c).join('') : hex;
+    const alpha = full.length === 8 ? parseInt(full.slice(6), 16) / 255 : 1;
+    return { color: parseInt(full.slice(0, 6), 16), alpha };
+  }
+  const rgb = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?\s*\)$/i.exec(raw);
+  if (rgb) {
+    const [r, g, b] = [rgb[1], rgb[2], rgb[3]].map((v) => Math.round(Number(v)));
+    return { color: (r! << 16) | (g! << 8) | b!, alpha: rgb[4] === undefined ? 1 : Number(rgb[4]) };
+  }
+  return { color: fallback, alpha: 1 };
+}
+
+const lightScheme = () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: light)').matches;
+
+/**
+ * Two full-screen decorative PixiJS canvases: one behind the UI with the
+ * slowly drifting Lagoon aurora glows, one in front of it for particle bursts
  * driven by `fxBus`. Both are aria-hidden,
  * ignores pointer input, freezes to a still frame under reduced motion and
  * pauses while the tab is hidden.
@@ -87,10 +115,9 @@ export function PixiStage() {
       frontHost.current?.appendChild(front.canvas);
 
       const bg = new Container();
-      const stars = new Container();
       const fx = new Container();
       fx.blendMode = 'add';
-      app.stage.addChild(bg, stars);
+      app.stage.addChild(bg);
       front.stage.addChild(fx);
 
       // Particle textures belong to the front renderer.
@@ -110,59 +137,43 @@ export function PixiStage() {
       ctx.fillRect(0, 0, 256, 256);
       const glow = Texture.from(glowCanvas);
 
-      // Background orbs.
-      const orbs: Orb[] = [];
-      const makeOrbs = () => {
+      // Aurora glows. They replace the static CSS ones painted on the page while Pixi is up.
+      const glows: Glow[] = [];
+      const makeGlows = () => {
         bg.removeChildren().forEach((c) => c.destroy({ texture: false }));
-        orbs.length = 0;
+        glows.length = 0;
         const w = app.screen.width;
         const h = app.screen.height;
-        const r = Math.max(w, h) * 0.35;
-        ORB_COLORS.forEach((color, i) => {
+        GLOWS.forEach((spec, i) => {
+          const { color, alpha } = cssColor(spec.name);
           const g = new Sprite(glow);
           g.anchor.set(0.5);
-          g.width = g.height = r * 2;
+          // Same footprint as the CSS glows, which fade to transparent at 70% of their radius.
+          g.width = w * spec.rx * 1.4;
+          g.height = h * spec.ry * 1.4;
           g.tint = color;
-          g.alpha = 0.35;
-          g.blendMode = 'add';
-          const orb: Orb = {
-            g,
-            baseX: w * (0.15 + 0.7 * ((i * 0.37) % 1)),
-            baseY: h * (0.15 + 0.7 * ((i * 0.61) % 1)),
-            ampX: w * 0.12,
-            ampY: h * 0.1,
-            speed: 0.00012 + i * 0.00003,
-            phase: i * 1.7,
-          };
-          g.position.set(orb.baseX, orb.baseY);
+          g.alpha = alpha;
+          const o: Glow = { g, fx: spec.fx, fy: spec.fy, ampX: 0.06, ampY: 0.05, speed: TAU / spec.loopMs, phase: i * 2.1 };
+          g.position.set(w * o.fx, h * o.fy);
           bg.addChild(g);
-          orbs.push(orb);
+          glows.push(o);
         });
+        // Particles glow additively on the night water; on the day theme they would vanish, so blend normally.
+        fx.blendMode = lightScheme() ? 'normal' : 'add';
       };
 
-      const starList: Star[] = [];
-      const makeStars = () => {
-        stars.removeChildren().forEach((c) => c.destroy());
-        starList.length = 0;
-        const count = Math.round((app.screen.width * app.screen.height) / 9000);
-        for (let i = 0; i < count; i++) {
-          const g = new Graphics().circle(0, 0, Math.random() * 1.4 + 0.4).fill(0xffffff);
-          g.position.set(Math.random() * app.screen.width, Math.random() * app.screen.height);
-          g.alpha = 0.3 + Math.random() * 0.5;
-          stars.addChild(g);
-          starList.push({ g, speed: 0.001 + Math.random() * 0.003, phase: Math.random() * Math.PI * 2 });
-        }
-      };
-
-      makeOrbs();
-      makeStars();
+      makeGlows();
+      document.documentElement.classList.add('has-aurora');
+      cleanups.push(() => document.documentElement.classList.remove('has-aurora'));
       const onResize = () => {
-        makeOrbs();
-        makeStars();
+        makeGlows();
         if (reducedRef.current) app.render();
       };
       window.addEventListener('resize', onResize);
       cleanups.push(() => window.removeEventListener('resize', onResize));
+      const scheme = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: light)') : null;
+      scheme?.addEventListener('change', onResize);
+      cleanups.push(() => scheme?.removeEventListener('change', onResize));
 
       // Particles.
       const particles: Particle[] = [];
@@ -211,12 +222,13 @@ export function PixiStage() {
               });
             }
             spawn(ring, e.x, e.y, color, { angle: 0, speed: 0, scale: 0.4, maxLife: 420, grow: 0.045, drag: 1 });
-            if (e.value >= 256) spawn(ring, e.x, e.y, 0xffffff, { angle: 0, speed: 0, scale: 0.2, maxLife: 600, grow: 0.07, drag: 1 });
+            if (e.value >= 256) spawn(ring, e.x, e.y, 0xe9fbd9, { angle: 0, speed: 0, scale: 0.2, maxLife: 600, grow: 0.07, drag: 1 });
             break;
           }
-          case 'spawn':
+          case 'spawn': {
+            const foam = cssColor('--accent').color;
             for (let i = 0; i < 8; i++) {
-              spawn(dot, e.x, e.y, 0xffffff, {
+              spawn(dot, e.x, e.y, foam, {
                 angle: (i / 8) * Math.PI * 2,
                 speed: 1.2,
                 scale: 0.18,
@@ -225,6 +237,7 @@ export function PixiStage() {
               });
             }
             break;
+          }
           case 'win':
             for (let i = 0; i < 220; i++) {
               spawn(rect, e.x, e.y, CONFETTI[i % CONFETTI.length]!, {
@@ -254,13 +267,13 @@ export function PixiStage() {
         const f = ticker.deltaTime;
         elapsed += dt;
 
-        for (const o of orbs) {
+        const w = app.screen.width;
+        const h = app.screen.height;
+        for (const o of glows) {
           const t = elapsed * o.speed + o.phase;
-          o.g.position.set(o.baseX + Math.sin(t) * o.ampX, o.baseY + Math.cos(t * 1.3) * o.ampY);
+          o.g.position.set(w * (o.fx + Math.sin(t) * o.ampX), h * (o.fy + Math.cos(t) * o.ampY));
         }
         bg.alpha += (tintTarget - bg.alpha) * 0.05 * f;
-
-        for (const s of starList) s.g.alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(elapsed * s.speed + s.phase));
 
         for (let i = particles.length - 1; i >= 0; i--) {
           const p = particles[i]!;

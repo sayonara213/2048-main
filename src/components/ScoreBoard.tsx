@@ -13,7 +13,7 @@ interface ScoreBoardProps {
 
 export function ScoreBoard({ score, bestScore, elapsedMs, moves, gains }: ScoreBoardProps) {
   return (
-    <dl className="grid grid-cols-4 gap-2">
+    <dl className="lg-stats">
       <Stat label="Score">
         <AnimatedNumber value={score} />
         <ScorePopups gains={gains} />
@@ -27,16 +27,16 @@ export function ScoreBoard({ score, bestScore, elapsedMs, moves, gains }: ScoreB
           {formatDuration(elapsedMs)}
         </span>
       </Stat>
-      <Stat label="Moves">{moves}</Stat>
+      <Stat label="Moves">{moves.toLocaleString()}</Stat>
     </dl>
   )
 }
 
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="relative rounded-lg bg-stone-800/70 px-2 py-1.5 text-center ring-1 ring-white/10 backdrop-blur-md">
-      <dt className="text-xs font-semibold tracking-wide text-stone-300 uppercase">{label}</dt>
-      <dd className="text-lg font-bold text-white tabular-nums sm:text-xl">{children}</dd>
+    <div className="lg-stat">
+      <dt className="lg-stat-label">{label}</dt>
+      <dd className="lg-stat-value">{children}</dd>
     </div>
   )
 }

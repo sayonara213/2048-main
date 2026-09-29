@@ -43,14 +43,14 @@ export function Board({ game, onMove }: BoardProps) {
     <div
       {...swipe}
       ref={board}
-      className="board relative aspect-square w-full touch-none select-none rounded-2xl bg-stone-800/70 p-[var(--gap)] shadow-2xl ring-1 ring-white/10 backdrop-blur-md"
+      className="board relative aspect-square w-full touch-none select-none p-[var(--gap)]"
       style={{ '--size': size } as CSSProperties}
     >
       <div role="table" aria-label={`Game board, ${size} by ${size}`} className="grid h-full gap-[var(--gap)]">
         {grid.map((row, r) => (
           <div role="row" key={r} className="grid grid-cols-[repeat(var(--size),1fr)] gap-[var(--gap)]">
             {row.map((value, c) => (
-              <div role="cell" key={c} className="rounded-xl bg-stone-600/80">
+              <div role="cell" key={c} className="lg-cell">
                 <span className="sr-only">{value || 'empty'}</span>
               </div>
             ))}
