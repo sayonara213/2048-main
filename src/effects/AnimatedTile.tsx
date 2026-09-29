@@ -21,7 +21,11 @@ export interface AnimatedTileProps {
   ghost?: boolean;
 }
 
-const SLIDE = { type: 'spring', stiffness: 700, damping: 45, mass: 0.6 } as const;
+// Lagoon motion: slides 110ms ease-in-out, new tiles 0.6 -> 1 over 160ms,
+// merges 1 -> 1.12 -> 1 over 180ms.
+const SLIDE = { duration: 0.11, ease: 'easeInOut' } as const;
+const SPAWN = { duration: 0.16, ease: 'easeOut', delay: 0.08 } as const;
+const MERGE = { duration: 0.18, ease: 'easeInOut' as const, times: [0, 0.5, 1], delay: 0.06 };
 
 /**
  * A single tile. Render it inside a `position: relative` layer whose origin is
@@ -35,7 +39,8 @@ export function AnimatedTile({ value, row, col, cell, gap, isNew, merged, ghost 
   const x = col * (cell + gap);
   const y = row * (cell + gap);
   const digits = String(value).length;
-  const fontSize = cell * (digits <= 2 ? 0.45 : digits === 3 ? 0.38 : digits === 4 ? 0.3 : 0.24);
+  // tile-lg / tile-md / tile-sm, scaled from the 88px reference tile.
+  const fontSize = cell * (digits <= 2 ? 0.45 : digits === 3 ? 0.36 : digits === 4 ? 0.28 : 0.22);
 
   // Fire a particle burst once the merged tile has slid into place.
   const prevValue = useRef(value);
@@ -57,32 +62,34 @@ export function AnimatedTile({ value, row, col, cell, gap, isNew, merged, ghost 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const glow = value >= 128 ? `0 0 ${Math.min(8 + Math.log2(value) * 3, 40)}px ${style.bg}` : 'none';
+  const pearl = value >= 2048;
 
   return (
     <motion.div
       ref={ref}
-      initial={isNew ? { x, y, scale: 0, opacity: 0 } : merged ? { x, y, opacity: 0 } : false}
+      initial={isNew ? { x, y, scale: 0.6, opacity: 0 } : merged ? { x, y, opacity: 0 } : false}
       animate={{ x, y, scale: 1, opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: ghost ? 0 : 0.1 } }}
-      transition={reduced ? { duration: 0 } : { ...SLIDE, scale: { type: 'spring', stiffness: 500, damping: 18, delay: 0.08 }, opacity: { duration: 0.12, delay: 0.08 } }}
+      transition={reduced ? { duration: 0 } : { ...SLIDE, scale: SPAWN, opacity: { duration: 0.12, delay: 0.08 } }}
       style={{ position: 'absolute', left: 0, top: 0, width: cell, height: cell, zIndex: ghost ? 0 : merged ? 2 : 1 }}
     >
       <motion.div
         key={value}
-        initial={merged && !reduced ? { scale: 1.28, rotate: -4 } : false}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 520, damping: 14, delay: 0.06 }}
+        initial={merged && !reduced ? { scale: 1 } : false}
+        animate={merged && !reduced ? { scale: [1, 1.12, 1] } : { scale: 1 }}
+        transition={MERGE}
         style={{
           width: '100%',
           height: '100%',
-          borderRadius: Math.round(cell * 0.12),
+          borderRadius: Math.min(14, Math.round(cell * 0.16)),
           background: style.bg,
           color: style.fg,
-          boxShadow: `inset 0 -4px 0 rgba(0,0,0,.12), ${glow}`,
+          boxShadow: pearl ? 'var(--shadow-tile), var(--shadow-pearl)' : 'var(--shadow-tile)',
           display: 'grid',
           placeItems: 'center',
-          fontWeight: 800,
+          fontFamily: 'var(--font-display)',
+          fontWeight: 600,
+          lineHeight: 1,
           fontSize,
           fontVariantNumeric: 'tabular-nums',
           userSelect: 'none',

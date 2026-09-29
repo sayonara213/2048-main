@@ -1,34 +1,333 @@
 @import 'tailwindcss';
 
-@theme {
-  --animate-appear: appear 180ms ease-out;
-
-  @keyframes appear {
-    from { opacity: 0; transform: scale(0.5); }
-    to { opacity: 1; transform: scale(1); }
-  }
-}
-
+/*
+ * Lagoon design system tokens. Night is the primary theme; Day follows the
+ * OS light preference.
+ */
 :root {
   color-scheme: dark;
-  background: #0d0a1f;
-  color: var(--color-stone-100);
+
+  --ground-000: #07161d;
+  --ground-100: #0e2a33;
+  --glow-teal: rgba(38, 150, 140, 0.55);
+  --glow-sea: rgba(30, 96, 150, 0.5);
+  --glow-kelp: rgba(70, 150, 110, 0.35);
+  --glass: rgba(170, 230, 225, 0.07);
+  --glass-raised: rgba(170, 230, 225, 0.11);
+  --glass-edge: rgba(200, 245, 240, 0.16);
+  --well: rgba(4, 20, 26, 0.45);
+  --scrim: rgba(7, 22, 29, 0.9);
+  --ink: #e6f6f3;
+  --ink-muted: #9cc3c0;
+  --accent: #7fe0c4;
+  --on-accent: #06231f;
+  --shadow-glass: 0 24px 60px rgba(0, 10, 14, 0.45);
+
+  --tile-2: #e3f4ef;
+  --tile-4: #c3ebdf;
+  --tile-8: #8edbc6;
+  --tile-16: #5cc8b2;
+  --tile-32: #35ad9f;
+  --tile-64: #187a82;
+  --tile-128: #236c9c;
+  --tile-256: #2a5a93;
+  --tile-512: #274a85;
+  --tile-1024: #8cc4ef;
+  --tile-2048: #e9fbd9;
+  --tile-ink-light: #123b37;
+  --tile-ink-dark: #f0fbf9;
+  --tile-ink-deep: #0c2440;
+  --shadow-tile: 0 2px 0 rgba(0, 20, 26, 0.18);
+  --shadow-pearl: 0 0 28px rgba(210, 255, 225, 0.55);
+
+  --font-display: 'Unbounded', 'Sora', system-ui, sans-serif;
+  --font-sans: 'Manrope', system-ui, sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --blur-glass: 20px;
 }
 
-.board {
-  --gap: clamp(0.5rem, 2.5vw, 0.875rem);
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+
+    --ground-000: #e9f4f2;
+    --ground-100: #d6ebe8;
+    --glow-teal: rgba(94, 205, 190, 0.45);
+    --glow-sea: rgba(120, 180, 230, 0.4);
+    --glow-kelp: rgba(160, 220, 170, 0.4);
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-raised: rgba(255, 255, 255, 0.72);
+    --glass-edge: rgba(12, 60, 70, 0.12);
+    --well: rgba(12, 70, 80, 0.08);
+    --scrim: rgba(233, 244, 242, 0.92);
+    --ink: #0c2a30;
+    --ink-muted: #3f6668;
+    --accent: #127f6c;
+    --on-accent: #ffffff;
+    --shadow-glass: 0 24px 60px rgba(20, 70, 80, 0.14);
+  }
 }
 
-@layer components {
-  .btn-primary {
-    @apply rounded-lg bg-amber-400 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-300;
-  }
-  .btn-secondary {
-    @apply rounded-lg bg-stone-600 px-4 py-2 font-semibold text-white hover:bg-stone-500;
-  }
+html {
+  background: var(--ground-000);
+}
+
+/* Page ground. The aurora glows are painted here until the PixiJS layer takes over and drifts them. */
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background:
+    radial-gradient(60% 50% at 15% 10%, var(--glow-teal), transparent 70%),
+    radial-gradient(50% 60% at 95% 45%, var(--glow-sea), transparent 70%),
+    radial-gradient(60% 45% at 35% 105%, var(--glow-kelp), transparent 70%),
+    var(--ground-000);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+html.has-aurora body {
+  background: var(--ground-000);
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-amber-300);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Console: the one glass panel that holds everything. */
+.lg-console {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: clamp(var(--space-4), 5vw, var(--space-5));
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.2);
+  backdrop-filter: blur(var(--blur-glass)) saturate(1.2);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lg-console {
+    background: var(--ground-100);
+  }
+}
+
+.lg-head,
+.lg-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.lg-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 11vw, 48px);
+  line-height: 0.95;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.lg-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.lg-hint {
+  flex: 1 1 160px;
+  margin: 0;
+  max-width: 240px;
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* StatStrip: one strip, hairline dividers. */
+.lg-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+  background: var(--glass-raised);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-md);
+}
+
+.lg-stat {
+  position: relative;
+  min-width: 0;
+  padding: 10px var(--space-1);
+  text-align: center;
+}
+
+.lg-stat + .lg-stat {
+  border-left: 1px solid var(--glass-edge);
+}
+
+.lg-stat-label {
+  display: block;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.lg-stat-value {
+  display: block;
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(14px, 4.4vw, 20px);
+  line-height: 24px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* Buttons. */
+.lg-btn {
+  appearance: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 var(--space-4);
+  font: 700 14px/20px var(--font-sans);
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--glass-raised);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-sm);
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    background 0.12s ease;
+}
+
+.lg-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.lg-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.lg-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.lg-btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+
+/* D-pad. */
+.lg-dpad {
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(2, 44px);
+  gap: 6px;
+}
+
+.lg-dpad .lg-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.lg-dpad svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Board tray: a recess cut into the glass. */
+.board {
+  --gap: clamp(8px, 2.6vw, var(--space-3));
+  background: var(--well);
+  border-radius: var(--radius-lg);
+}
+
+.lg-cell {
+  border-radius: var(--radius-md);
+  background: var(--glass);
+}
+
+/* Win and game-over panel over the board. */
+.lg-outcome {
+  background: var(--scrim);
+  border-radius: var(--radius-lg);
+  color: var(--ink);
+}
+
+.lg-outcome-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 8vw, 34px);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.lg-outcome-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+@keyframes lg-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lg-outcome {
+    animation: lg-appear 180ms ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-btn {
+    transition: none;
+  }
+  .lg-btn:active:not(:disabled) {
+    transform: none;
+  }
 }
