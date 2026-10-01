@@ -13,7 +13,7 @@ interface ScoreBoardProps {
 
 export function ScoreBoard({ score, bestScore, elapsedMs, moves, gains }: ScoreBoardProps) {
   return (
-    <dl className="lg-stats">
+    <dl className="kc-stats">
       <Stat label="Score">
         <AnimatedNumber value={score} />
         <ScorePopups gains={gains} />
@@ -34,9 +34,9 @@ export function ScoreBoard({ score, bestScore, elapsedMs, moves, gains }: ScoreB
 
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="lg-stat">
-      <dt className="lg-stat-label">{label}</dt>
-      <dd className="lg-stat-value">{children}</dd>
+    <div className="kc-stat">
+      <dt className="kc-stat-label">{label}</dt>
+      <dd className="kc-stat-value">{children}</dd>
     </div>
   )
 }

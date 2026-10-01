@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { describeMove, describeOutcome } from './announce'
 import { Board } from './components/Board'
 import { DirectionPad } from './components/DirectionPad'
@@ -49,41 +49,39 @@ function Game() {
   const gained = last?.result.moved ? last.result.scoreGained : 0
   const gains = useScoreGains(gained, seq)
   const boardArea = useRef<HTMLDivElement>(null)
+  const lastMove = useMemo(() => (last ? { direction: last.direction, moved: last.result.moved, seq } : null), [last, seq])
   useOutcomeEffects(game.won, game.over, boardArea)
 
   return (
-    <main className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[512px] flex-col justify-center px-4 py-8">
-      <div className="lg-console">
-        <header className="lg-head">
-          <h1 className="lg-title">2048</h1>
-          <div className="lg-actions">
-            <EffectsToggle className="lg-btn" />
-            <button type="button" onClick={newGame} className="lg-btn lg-btn-primary">
-              New game
-            </button>
-          </div>
-        </header>
-
-        <ScoreBoard
-          score={game.score}
-          bestScore={bestScore}
-          elapsedMs={timer.elapsed}
-          moves={moves}
-          gains={gains}
-        />
-
-        <div ref={boardArea} className="relative">
-          <Board game={game} onMove={move} />
-          <Outcome game={game} elapsedMs={timer.elapsed} onRestart={newGame} onKeepPlaying={keepPlaying} />
+    <main className="kc-main">
+      <header className="kc-head">
+        <div>
+          <p className="eyebrow">Merge the keys</p>
+          <h1 className="kc-title">
+            20<span className="rainbow-text">48</span>
+          </h1>
         </div>
-
-        <div className="lg-foot">
-          <p id="how-to-play" className="lg-hint">
-            Slide to join tiles. Reach 2048. Arrow keys, WASD, swipe or the arrows here. Your game is saved in this
-            browser.
-          </p>
-          <DirectionPad onMove={move} disabled={blocked} />
+        <div className="kc-actions">
+          <EffectsToggle className="btn-ghost" />
+          <button type="button" onClick={newGame} className="btn-primary">
+            New game
+          </button>
         </div>
+      </header>
+
+      <ScoreBoard score={game.score} bestScore={bestScore} elapsedMs={timer.elapsed} moves={moves} gains={gains} />
+
+      <div ref={boardArea} className="relative">
+        <Board game={game} onMove={move} lastMove={lastMove} />
+        <Outcome game={game} elapsedMs={timer.elapsed} onRestart={newGame} onKeepPlaying={keepPlaying} />
+      </div>
+
+      <div className="kc-foot">
+        <p id="how-to-play" className="kc-hint">
+          Slide to join keys and reach 2048. Use <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd>,{' '}
+          <kbd className="rgb">WASD</kbd>, a swipe or the keys here. Your game is saved in this browser.
+        </p>
+        <DirectionPad onMove={move} disabled={blocked} />
       </div>
 
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
