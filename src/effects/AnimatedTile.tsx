@@ -21,7 +21,7 @@ export interface AnimatedTileProps {
   ghost?: boolean;
 }
 
-// Lagoon motion: slides 110ms ease-in-out, new tiles 0.6 -> 1 over 160ms,
+// Keycap motion: slides 110ms ease-in-out, new tiles 0.6 -> 1 over 160ms,
 // merges 1 -> 1.12 -> 1 over 180ms.
 const SLIDE = { duration: 0.11, ease: 'easeInOut' } as const;
 const SPAWN = { duration: 0.16, ease: 'easeOut', delay: 0.08 } as const;
@@ -62,8 +62,6 @@ export function AnimatedTile({ value, row, col, cell, gap, isNew, merged, ghost 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pearl = value >= 2048;
-
   return (
     <motion.div
       ref={ref}
@@ -78,24 +76,15 @@ export function AnimatedTile({ value, row, col, cell, gap, isNew, merged, ghost 
         initial={merged && !reduced ? { scale: 1 } : false}
         animate={merged && !reduced ? { scale: [1, 1.12, 1] } : { scale: 1 }}
         transition={MERGE}
+        className="kc-flat-cap"
         style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: Math.min(14, Math.round(cell * 0.16)),
+          borderRadius: Math.min(12, Math.round(cell * 0.14)),
           background: style.bg,
           color: style.fg,
-          boxShadow: pearl ? 'var(--shadow-tile), var(--shadow-pearl)' : 'var(--shadow-tile)',
-          display: 'grid',
-          placeItems: 'center',
-          fontFamily: 'var(--font-display)',
-          fontWeight: 600,
-          lineHeight: 1,
           fontSize,
-          fontVariantNumeric: 'tabular-nums',
-          userSelect: 'none',
         }}
       >
-        {value}
+        <span className={style.rainbow ? 'rainbow-text' : undefined}>{value}</span>
       </motion.div>
     </motion.div>
   );

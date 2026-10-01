@@ -7,10 +7,10 @@ import { PixiStage } from './PixiStage'
 describe('effects', () => {
   afterEach(() => localStorage.clear())
 
-  it('keeps the Pixi canvas hosts out of the accessibility tree', () => {
+  it('keeps the Pixi canvas host out of the accessibility tree', () => {
     const { container } = render(<PixiStage />)
-    expect(container.children).toHaveLength(2)
-    for (const host of container.children) expect(host).toHaveAttribute('aria-hidden', 'true')
+    expect(container.children).toHaveLength(1)
+    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('shows score popups visually only', () => {

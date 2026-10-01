@@ -24,23 +24,26 @@ export function Outcome({ game, elapsedMs, onRestart, onKeepPlaying }: OutcomePr
   return (
     <section
       aria-labelledby="outcome-title"
-      className="lg-outcome absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 p-6 text-center"
+      className="kc-outcome absolute inset-0 z-10 grid place-items-center p-4"
     >
-      <h2 id="outcome-title" className="lg-outcome-title">
-        {game.over ? 'Game over' : 'You made 2048!'}
-      </h2>
-      <p className="lg-outcome-body">
-        Score {game.score.toLocaleString()} in {formatDuration(elapsedMs)}
-      </p>
-      <div className="flex gap-2">
-        {showWin && (
-          <button ref={primary} type="button" onClick={onKeepPlaying} className="lg-btn lg-btn-primary">
-            Keep playing
+      <div className="sheet kc-outcome-sheet">
+        <p className="eyebrow">{game.over ? 'No moves left' : 'You win'}</p>
+        <h2 id="outcome-title" className="kc-outcome-title">
+          {game.over ? 'Game over' : <>You made <span className="rainbow-text">2048</span></>}
+        </h2>
+        <p className="kc-outcome-body">
+          Score {game.score.toLocaleString()} in {formatDuration(elapsedMs)}
+        </p>
+        <div className="kc-outcome-actions">
+          {showWin && (
+            <button ref={primary} type="button" onClick={onKeepPlaying} className="btn-primary">
+              Keep playing
+            </button>
+          )}
+          <button ref={showWin ? undefined : primary} type="button" onClick={onRestart} className={showWin ? 'btn-ghost' : 'btn-primary'}>
+            {game.over ? 'Try again' : 'New game'}
           </button>
-        )}
-        <button ref={showWin ? undefined : primary} type="button" onClick={onRestart} className={showWin ? 'lg-btn' : 'lg-btn lg-btn-primary'}>
-          {game.over ? 'Try again' : 'New game'}
-        </button>
+        </div>
       </div>
     </section>
   )

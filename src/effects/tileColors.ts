@@ -1,30 +1,37 @@
 export interface TileStyle {
+  /** Keycap fill. */
   bg: string;
+  /** Legend ink. */
   fg: string;
-  glow: number; // 0xRRGGBB for Pixi particles
+  /** 0xRRGGBB for the key's backlight and Pixi particles. */
+  glow: number;
+  /** The legend is painted with the rainbow instead of `fg`. */
+  rainbow?: boolean;
 }
 
-// The Lagoon water scale: light shallows, deep water, then surfacing to the
-// pearl. Every numeral pair clears 4.5:1.
-const LIGHT = '#123b37'; // tile-ink-light
-const DARK = '#f0fbf9'; // tile-ink-dark
-const DEEP = '#0c2440'; // tile-ink-deep
+// Keycap palette. The first two values are plain white caps; from 8 up the caps
+// walk the RGB stops, then go dark for 1024 and the rainbow-lit 2048. Every
+// legend clears 4.5:1 on its cap.
+export const LEGEND = '#141416'; // cap-legend
+export const PAPER = '#f3f3f4'; // paper
+
+export const RGB = [0xff5d6c, 0xffa94d, 0xffe45c, 0x5ee08a, 0x4fb8ff, 0x8c6cff, 0xff6ad5];
 
 const STYLES: Record<number, TileStyle> = {
-  2: { bg: '#e3f4ef', fg: LIGHT, glow: 0xe3f4ef },
-  4: { bg: '#c3ebdf', fg: LIGHT, glow: 0xc3ebdf },
-  8: { bg: '#8edbc6', fg: LIGHT, glow: 0x8edbc6 },
-  16: { bg: '#5cc8b2', fg: LIGHT, glow: 0x5cc8b2 },
-  32: { bg: '#35ad9f', fg: LIGHT, glow: 0x4fd1bf },
-  64: { bg: '#187a82', fg: DARK, glow: 0x2fb3bd },
-  128: { bg: '#236c9c', fg: DARK, glow: 0x4a9fd6 },
-  256: { bg: '#2a5a93', fg: DARK, glow: 0x5a8fd0 },
-  512: { bg: '#274a85', fg: DARK, glow: 0x6c8fe0 },
-  1024: { bg: '#8cc4ef', fg: DEEP, glow: 0x8cc4ef },
-  2048: { bg: '#e9fbd9', fg: LIGHT, glow: 0xe9fbd9 },
+  2: { bg: '#eeeef0', fg: LEGEND, glow: 0xeeeef0 },
+  4: { bg: '#bdbdc4', fg: LEGEND, glow: 0xd6d6dc },
+  8: { bg: '#ff5d6c', fg: LEGEND, glow: 0xff5d6c },
+  16: { bg: '#ffa94d', fg: LEGEND, glow: 0xffa94d },
+  32: { bg: '#ffe45c', fg: LEGEND, glow: 0xffe45c },
+  64: { bg: '#5ee08a', fg: LEGEND, glow: 0x5ee08a },
+  128: { bg: '#4fb8ff', fg: LEGEND, glow: 0x4fb8ff },
+  256: { bg: '#8c6cff', fg: LEGEND, glow: 0x8c6cff },
+  512: { bg: '#ff6ad5', fg: LEGEND, glow: 0xff6ad5 },
+  1024: { bg: '#2a2a2e', fg: PAPER, glow: 0xf3f3f4 },
+  2048: { bg: '#141416', fg: PAPER, glow: 0xf3f3f4, rainbow: true },
 };
 
 export function tileStyle(value: number): TileStyle {
-  // Values above 2048 stay pearls.
+  // Values above 2048 keep the rainbow cap.
   return STYLES[value] ?? STYLES[2048]!;
 }
